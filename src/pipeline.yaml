@@ -1,0 +1,4 @@
+steps:
+  - step: "fetch_page"
+  - step: "parse_page"
+  - step: "save_to_csv"

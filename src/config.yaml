@@ -1,0 +1,3 @@
+scraper:
+  base_url: "https://books.toscrape.com"
+  output_file: "scraped_data.csv"
