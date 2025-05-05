@@ -1,4 +1,48 @@
-steps:
-  - step: "fetch_page"
-  - step: "parse_page"
-  - step: "save_to_csv"
+# Pipeline configuration for web scraper
+name: "General Web Scraper Pipeline"
+description: "A pipeline for scraping any website"
+
+# Use configuration from config.yaml
+config: "config.yaml"
+
+# Scraper mode: simple, selenium, scrapy, pyppeteer, playwright
+scraper_mode: "simple"
+
+# URLs to scrape (can be overridden by site configuration in config.yaml)
+urls:
+  - "https://eniad.ump.ma/"
+
+# Target site name (must be defined in config.yaml sites section)
+# If specified, will use the site's URLs and selectors
+site_name: "example_site"
+
+# CSS selectors for data extraction (can be overridden by site configuration)
+selectors:
+  title: "h1.title"
+  content: "div.content"
+  date: "span.date"
+  author: "span.author"
+
+# Additional extraction options
+extract_links: true
+extract_images: true
+extract_metadata: true
+
+# Post-processing configuration
+post_processing:
+  operations:
+    - type: "filter"
+      column: "content"
+      condition: "contains"
+      value: "keyword"
+    
+    - type: "deduplicate"
+      columns: ["title", "url"]
+    
+    - type: "sort"
+      column: "date"
+      ascending: false
+  
+  export:
+    format: "csv"
+    path: "processed_data"

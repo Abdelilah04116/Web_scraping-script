@@ -1,3 +1,63 @@
-scraper:
-  base_url: "https://books.toscrape.com"
-  output_file: "scraped_data.csv"
+# Configuration générale
+user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36"
+request_timeout: 30
+delay_between_requests: 2
+max_retries: 3
+# Mode de scraping: simple, selenium, scrapy, pyppeteer, playwright
+default_mode: "simple"
+
+# Configuration du stockage
+storage:
+  type: "csv"  # Options: csv, json, mongodb, sqlite
+  path: "scraped_data.csv"
+
+# Configuration base de données
+database:
+  mongodb:
+    uri: "mongodb://localhost:27017"
+    db_name: "scraping_data"
+    collection: "scraped_items"
+  sqlite:
+    path: "scraping_data.db"
+    table: "scraped_items"
+
+# Configuration du proxy
+proxy:
+  enabled: false
+  type: "http"  # http, socks5
+  host: ""
+  port: ""
+  username: ""
+  password: ""
+  rotate: false
+  proxy_list: []
+
+# Configuration du navigateur (pour Selenium, Pyppeteer, Playwright)
+browser:
+  type: "chrome"  # chrome, firefox
+  headless: true
+  window_size: "1920,1080"
+  executable_path: ""
+  load_images: false
+  plugins_enabled: false
+
+# Configuration spécifique aux sites
+sites:
+  example_site:
+    base_url: "https://example.com"
+    scraping_mode: "simple"
+    selectors:
+      title: "h1.title"
+      content: "div.content"
+      date: "span.date"
+      author: "span.author"
+    pagination:
+      enabled: true
+      selector: "a.next-page"
+      max_pages: 5
+    login:
+      required: false
+      login_url: ""
+      username_field: ""
+      password_field: ""
+      submit_button: ""
