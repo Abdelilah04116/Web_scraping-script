@@ -10,7 +10,7 @@ scraper_mode: "playwright"
 
 # URLs to scrape
 urls:
-  - "https://www.reshot.com/"
+  - "https://burst.shopify.com/"
 
 # CSS selectors for data extraction
 selectors:
