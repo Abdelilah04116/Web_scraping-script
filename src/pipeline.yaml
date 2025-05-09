@@ -10,7 +10,7 @@ scraper_mode: "playwright"
 
 # URLs to scrape
 urls:
-  - "https://pixabay.com/"
+  - "https://www.reshot.com/"
 
 # CSS selectors for data extraction
 selectors:
