@@ -5,6 +5,7 @@ import json
 from loguru import logger
 from tqdm import tqdm
 import time
+from bs4 import BeautifulSoup
 
 from config import Config
 from scraper import ScraperFactory
@@ -79,20 +80,23 @@ def execute_pipeline(pipeline_config):
             try:
                 logger.info(f"Scraping: {url}")
                 
-                # Scrape URL
+                # Scrape URL and ensure we get valid content
                 html_content = scraper.scrape(url)
                 
-                if not html_content:
+                if html_content is None:
                     logger.warning(f"Failed to get content from {url}")
                     continue
-                    
-                # Parse HTML
+                
+                # Parse HTML based on content type
                 if isinstance(html_content, dict):
                     # If scraper already returned parsed data
                     parsed_data = html_content
-                else:
-                    # Parse HTML with selectors
+                elif isinstance(html_content, str):
+                    # Parse raw HTML with selectors
                     parsed_data = parser.parse_html(html_content, selectors)
+                else:
+                    # Handle BeautifulSoup object
+                    parsed_data = parser.parse_html(str(html_content), selectors)
                     
                 # Add metadata
                 parsed_data['url'] = url
@@ -100,14 +104,14 @@ def execute_pipeline(pipeline_config):
                 parsed_data['site_name'] = site_name
                 
                 # Extract additional data if specified
-                if pipeline_config.get('extract_links', False):
-                    parsed_data['links'] = parser.extract_links(html_content, url)
+                if pipeline_config.get('extract_links', False) and isinstance(html_content, (str, BeautifulSoup)):
+                    parsed_data['links'] = parser.extract_links(str(html_content), url)
                     
-                if pipeline_config.get('extract_images', False):
-                    parsed_data['images'] = parser.extract_images(html_content, url)
+                if pipeline_config.get('extract_images', False) and isinstance(html_content, (str, BeautifulSoup)):
+                    parsed_data['images'] = parser.extract_images(str(html_content), url)
                     
-                if pipeline_config.get('extract_metadata', False):
-                    parsed_data['page_metadata'] = parser.extract_metadata(html_content)
+                if pipeline_config.get('extract_metadata', False) and isinstance(html_content, (str, BeautifulSoup)):
+                    parsed_data['page_metadata'] = parser.extract_metadata(str(html_content))
                     
                 # Save data
                 storage.save(parsed_data)
@@ -120,6 +124,7 @@ def execute_pipeline(pipeline_config):
                 
             except Exception as e:
                 logger.error(f"Error processing URL {url}: {str(e)}")
+                continue
                 
         logger.info(f"Scraped {len(all_results)} URLs successfully")
         
@@ -153,7 +158,10 @@ def post_process(data, post_processing_config):
         import pandas as pd
         
         df = pd.DataFrame(data)
-        
+        if df.empty:
+            logger.warning("No data to process")
+            return data
+            
         # Execute specified operations
         operations = post_processing_config.get('operations', [])
         
@@ -169,11 +177,13 @@ def post_process(data, post_processing_config):
                     if condition == 'equals':
                         df = df[df[column] == value]
                     elif condition == 'contains':
-                        df = df[df[column].astype(str).str.contains(value)]
+                        df = df[df[column].astype(str).str.contains(value, na=False)]
                     elif condition == 'greater_than':
                         df = df[df[column] > value]
                     elif condition == 'less_than':
                         df = df[df[column] < value]
+                else:
+                    logger.warning(f"Column {column} not found for filter operation")
                         
             elif op_type == 'sort':
                 column = operation.get('column')
@@ -181,12 +191,17 @@ def post_process(data, post_processing_config):
                 
                 if column and column in df.columns:
                     df = df.sort_values(by=column, ascending=ascending)
+                else:
+                    logger.warning(f"Column {column} not found for sort operation")
                     
             elif op_type == 'deduplicate':
                 columns = operation.get('columns', [])
                 
-                if columns:
-                    df = df.drop_duplicates(subset=columns)
+                # Only use columns that exist in the DataFrame
+                valid_columns = [col for col in columns if col in df.columns]
+                
+                if valid_columns:
+                    df = df.drop_duplicates(subset=valid_columns)
                 else:
                     df = df.drop_duplicates()
                     
@@ -196,12 +211,15 @@ def post_process(data, post_processing_config):
             export_format = export.get('format', 'csv')
             export_path = export.get('path', 'processed_data')
             
-            if export_format == 'csv':
-                df.to_csv(f"{export_path}.csv", index=False)
-            elif export_format == 'json':
-                df.to_json(f"{export_path}.json", orient='records')
-            elif export_format == 'excel':
-                df.to_excel(f"{export_path}.xlsx", index=False)
+            try:
+                if export_format == 'csv':
+                    df.to_csv(f"{export_path}.csv", index=False)
+                elif export_format == 'json':
+                    df.to_json(f"{export_path}.json", orient='records', indent=2)
+                elif export_format == 'excel':
+                    df.to_excel(f"{export_path}.xlsx", index=False)
+            except Exception as e:
+                logger.error(f"Error exporting data: {str(e)}")
                 
         return df.to_dict('records')
         

@@ -1,15 +1,31 @@
 # Configuration générale
 user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36"
 request_timeout: 30
-delay_between_requests: 2
+delay_between_requests: 3
 max_retries: 3
+verify_ssl: false  # Set to false to skip SSL certificate verification
 # Mode de scraping: simple, selenium, scrapy, pyppeteer, playwright
-default_mode: "simple"
+default_mode: "playwright"
 
 # Configuration du stockage
 storage:
-  type: "csv"  # Options: csv, json, mongodb, sqlite
-  path: "scraped_data.csv"
+  type: "json"  # Options: csv, json, mongodb, sqlite
+  path: "scraped_data.json"
+  media_folder: "downloaded_media"  # Nouveau: dossier pour les médias
+  download_media: true  # Nouveau: activer le téléchargement des médias
+  media_types:  # Nouveau: types de médias à télécharger
+    images: 
+      - ".jpg"
+      - ".jpeg"
+      - ".png"
+      - ".gif"
+      - ".webp"
+    videos:
+      - ".mp4"
+      - ".webm"
+      - ".mov"
+      - ".avi"
+  max_file_size: 100  # Nouveau: taille maximale en MB
 
 # Configuration base de données
 database:
@@ -35,11 +51,15 @@ proxy:
 # Configuration du navigateur (pour Selenium, Pyppeteer, Playwright)
 browser:
   type: "chrome"  # chrome, firefox
-  headless: true
+  headless: false  # Set to false to see the browser window
   window_size: "1920,1080"
   executable_path: ""
-  load_images: false
-  plugins_enabled: false
+  load_images: true
+  plugins_enabled: true
+  additional_args:
+    - "--disable-blink-features=AutomationControlled"
+    - "--disable-dev-shm-usage"
+    - "--no-sandbox"
 
 # Configuration spécifique aux sites
 sites:

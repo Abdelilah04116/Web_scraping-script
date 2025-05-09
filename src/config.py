@@ -44,3 +44,6 @@ class Config:
     
     def get_browser_config(self):
         return self.config.get('browser', {})
+    
+    def get_verify_ssl(self):
+        return self.config.get('verify_ssl', True)

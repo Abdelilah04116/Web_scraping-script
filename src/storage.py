@@ -1,6 +1,7 @@
 import os
 import csv
 import json
+import time
 import sqlite3
 import pandas as pd
 from datetime import datetime
@@ -124,59 +125,80 @@ class JSONStorage(BaseStorage):
         self.file_path = config.get_storage_path().replace('.csv', '.json')
         
     def save(self, data):
-        """
-        Save data to JSON file
-        
-        Args:
-            data (list): List of dictionaries to save
-            
-        Returns:
-            bool: True if successful, False otherwise
-        """
         try:
-            # Ensure data is a list of dictionaries
+            # Ensure data is a list
             if not isinstance(data, list):
                 data = [data]
-                
-            # Create directory if it doesn't exist
-            os.makedirs(os.path.dirname(os.path.abspath(self.file_path)), exist_ok=True)
             
-            # Load existing data if file exists
-            existing_data = []
-            if os.path.isfile(self.file_path):
-                with open(self.file_path, 'r', encoding='utf-8') as file:
-                    existing_data = json.load(file)
+            # Format the data for better readability
+            formatted_data = []
+            for item in data:
+                # Handle string content
+                if isinstance(item, str):
+                    formatted_item = {
+                        'content': item,
+                        'timestamp': time.strftime('%Y-%m-%d %H:%M:%S')
+                    }
+                else:
+                    # Handle dictionary content
+                    formatted_item = {
+                        'url': item.get('url', ''),
+                        'timestamp': item.get('timestamp', time.strftime('%Y-%m-%d %H:%M:%S')),
+                        'data': item.get('data', {}),
+                        'media': {
+                            'images': [],
+                            'videos': []
+                        }
+                    }
                     
-            # Append new data
-            combined_data = existing_data + data
-            
-            # Write to JSON
-            with open(self.file_path, 'w', encoding='utf-8') as file:
-                json.dump(combined_data, file, ensure_ascii=False, indent=2)
+                    # Format media data if present
+                    media = item.get('media', {})
+                    if media:
+                        # Format image data
+                        for img in media.get('images', []):
+                            formatted_item['media']['images'].append({
+                                'filename': img.get('filename'),
+                                'original_url': img.get('original_url'),
+                                'local_path': img.get('local_path'),
+                                'size': self._format_size(img.get('size', 0))
+                            })
+                        
+                        # Format video data
+                        for vid in media.get('videos', []):
+                            formatted_item['media']['videos'].append({
+                                'filename': vid.get('filename'),
+                                'original_url': vid.get('original_url'),
+                                'local_path': vid.get('local_path'),
+                                'size': self._format_size(vid.get('size', 0))
+                            })
                 
-            return True
+                formatted_data.append(formatted_item)
             
+            # Save formatted data to file
+            with open(self.file_path, 'w', encoding='utf-8') as f:
+                json.dump(formatted_data, f, indent=2, ensure_ascii=False)
+                
         except Exception as e:
-            logger.error(f"Error saving to JSON: {str(e)}")
-            return False
-            
+            logger.error(f"Error saving data to JSON: {str(e)}")
+            raise
+    
+    def _format_size(self, size_in_bytes):
+        """Convert bytes to human readable format"""
+        for unit in ['B', 'KB', 'MB', 'GB']:
+            if size_in_bytes < 1024.0:
+                return f"{size_in_bytes:.1f} {unit}"
+            size_in_bytes /= 1024.0
+        return f"{size_in_bytes:.1f} TB"
+    
     def load(self):
-        """
-        Load data from JSON file
-        
-        Returns:
-            list: List of dictionaries
-        """
         try:
-            if not os.path.isfile(self.file_path):
-                return []
-                
-            with open(self.file_path, 'r', encoding='utf-8') as file:
-                return json.load(file)
-                
-        except Exception as e:
-            logger.error(f"Error loading from JSON: {str(e)}")
+            with open(self.file_path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except FileNotFoundError:
             return []
+        except Exception as e:
+            logger.error(f"Error loading data from JSON: {str(e)}")
+            raise
 
 class MongoDBStorage(BaseStorage):
     def __init__(self, config):
