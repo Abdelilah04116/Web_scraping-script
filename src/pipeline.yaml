@@ -11,8 +11,7 @@ scraper_mode: "playwright"
 # URLs to scrape (add your own URLs here)
 urls:
   
-  - "https://soundcloud.com/dualipa/levitating" # Piste SoundCloud individuelle
-  
+  - "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
   - "https://www.pexels.com/video/aerial-view-of-a-bridge-over-water-28550458/"
 
 
