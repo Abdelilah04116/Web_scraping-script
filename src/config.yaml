@@ -11,21 +11,59 @@ default_mode: "playwright"
 storage:
   type: "json"  # Options: csv, json, mongodb, sqlite
   path: "scraped_data.json"
-  media_folder: "downloaded_media"  # Nouveau: dossier pour les médias
-  download_media: true  # Nouveau: activer le téléchargement des médias
-  media_types:  # Nouveau: types de médias à télécharger
-    images: 
+  media_folder: "downloaded_media"  # Dossier pour les médias
+  download_media: true  # Activer le téléchargement des médias
+  media_types:  # Types de médias à télécharger
+    images:
       - ".jpg"
       - ".jpeg"
       - ".png"
       - ".gif"
       - ".webp"
+      - ".svg"
+      - ".ico"
+      - ".bmp"
     videos:
       - ".mp4"
       - ".webm"
       - ".mov"
       - ".avi"
-  max_file_size: 100  # Nouveau: taille maximale en MB
+      - ".mkv"
+      - ".flv"
+      - ".m4v"
+    audio:
+      - ".mp3"
+      - ".wav"
+      - ".ogg"
+      - ".flac"
+      - ".aac"
+      - ".m4a"
+    documents:
+      - ".pdf"
+      - ".doc"
+      - ".docx"
+      - ".xls"
+      - ".xlsx"
+      - ".ppt"
+      - ".pptx"
+      - ".txt"
+      - ".csv"
+      - ".json"
+      - ".xml"
+  max_file_size: 500  # Taille maximale en MB
+
+# Configuration YouTube
+youtube:
+  download_videos: true  # Activer le téléchargement des vidéos
+  download_thumbnails: true
+  preferred_resolution: "720p"
+  download_audio_only: true  # Télécharger uniquement l'audio des vidéos
+  extract_audio: true  # Extraire l'audio des vidéos téléchargées
+  audio_format: "mp3"  # Format audio (mp3, m4a, wav)
+  audio_quality: "192k"  # Qualité audio (128k, 192k, 256k, 320k)
+  max_video_size: 1000  # MB
+  auto_download: true  # Télécharger automatiquement les vidéos lors du scraping
+  force_download: true  # Forcer le téléchargement même en cas d'erreur
 
 # Configuration base de données
 database:
@@ -61,6 +99,14 @@ browser:
     - "--disable-dev-shm-usage"
     - "--no-sandbox"
 
+# Configuration de gestion des erreurs
+error_handling:
+  retry_on_failure: true
+  max_retries: 3
+  retry_delay: 5  # secondes
+  skip_ssl_verification: true
+  timeout_multiplier: 1.5  # Multiplicateur pour les timeouts en cas de retry
+
 # Configuration spécifique aux sites
 sites:
   example_site:
@@ -81,3 +127,31 @@ sites:
       username_field: ""
       password_field: ""
       submit_button: ""
+
+  youtube:
+    base_url: "https://www.youtube.com"
+    scraping_mode: "playwright"
+    selectors:
+      video_title: "h1.title"
+      channel_name: "div#owner-name a"
+      description: "div#description-inline-expander"
+      views: "span.view-count"
+    download:
+      videos: true
+      thumbnails: true
+      preferred_resolution: "720p"
+
+  soundcloud:
+    base_url: "https://soundcloud.com"
+    scraping_mode: "playwright"
+    selectors:
+      track_title: "h1.soundTitle__title"
+      artist_name: "a.soundTitle__username"
+      description: "div.soundDescription__text"
+      play_count: "span.sc-ministats-plays"
+      likes_count: "span.sc-ministats-likes"
+    download:
+      tracks: true
+      artwork: true
+      format: "mp3"
+      quality: "192k"

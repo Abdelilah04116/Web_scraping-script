@@ -1,6 +1,6 @@
 # Pipeline configuration for web scraper
-name: "YouTube Scraper Pipeline"
-description: "A pipeline for scraping YouTube"
+name: "Web Content Scraper Pipeline"
+description: "A pipeline for scraping various types of web content (text, images, videos, YouTube)"
 
 # Use configuration from config.yaml
 config: "config.yaml"
@@ -8,31 +8,64 @@ config: "config.yaml"
 # Scraper mode: simple, selenium, scrapy, pyppeteer, playwright
 scraper_mode: "playwright"
 
-# URLs to scrape
+# URLs to scrape (add your own URLs here)
 urls:
-  - "https://burst.shopify.com/"
+  
+  - "https://soundcloud.com/dualipa/levitating" # Piste SoundCloud individuelle
+  
+  - "https://www.pexels.com/video/aerial-view-of-a-bridge-over-water-28550458/"
 
-# CSS selectors for data extraction
-selectors:
-  video_titles: "ytd-rich-item-renderer #video-title-link"
-  channel_names: "ytd-rich-item-renderer #channel-name a"
-  metadata: "ytd-rich-item-renderer #metadata-line span"
-  video_urls: "ytd-rich-item-renderer #video-title-link[href]"
 
-# Additional extraction options
-extract_links: false
-extract_images: false
+# Content extraction options
+extract_text: true
+extract_images: true
+extract_videos: true
+extract_youtube: true
 extract_metadata: true
+extract_links: true
+
+# YouTube specific options
+youtube:
+  download_videos: true
+  download_thumbnails: true
+  preferred_resolution: "720p"
+  download_audio_only: true  # Télécharger uniquement l'audio
+  extract_audio: true  # Extraire l'audio des vidéos
+  audio_format: "mp3"  # Format audio
+  audio_quality: "192k"  # Qualité audio
+  max_video_size: 1000  # MB
+
+# Media download options
+media:
+  download_images: true
+  download_videos: true
+  download_audio: true
+  max_file_size: 500  # MB
 
 # Wait time configuration
 wait_time: 10
+
+# Error handling
+error_handling:
+  retry_on_failure: true
+  max_retries: 3
+  skip_ssl_verification: true
 
 # Post-processing configuration
 post_processing:
   operations:
     - type: "deduplicate"
       columns: ["url"]
-  
+    - type: "sort"
+      column: "timestamp"
+      ascending: false
+
   export:
     format: "json"
     path: "processed_data"
+
+# Output organization
+output:
+  organize_by_domain: true
+  organize_by_type: true
+  create_summary_file: true
